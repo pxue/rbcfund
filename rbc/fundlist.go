@@ -16,44 +16,31 @@ type FundList struct {
 	Data    []*Fund
 }
 
-type Fund struct {
-	MorningstarCategoryName string
-	FundCode                string
-	FundShareClassID        string
-	Series                  string
-	WSODIssue               string
-	InceptionDate           int64
-	FundNameEN              string
-	FundNameFR              string
-	InvestmentSolutionEN    string
-	InvestmentSolutionFR    string
-	FundName                string
-	InvestmentSolution      string
-	AssetClass              string
-}
-
 type Funds map[string]*Fund
 
-var (
-	// Cached fund list for easy lookup
-	FundCache = Funds{}
-)
-
 func (fd Funds) Query(filter string) {
-
-	//var result struct {
-	//FundCode string
-	//FundName string
-	//Value    float64
-	//}
-	//rList := []result{}
-	//for _, f := range fd {
-	//p, err := NewPortfolio([]string{f.FundCode})
-	//if err != nil {
-	//panic(err)
-	//}
-	//}
-
+	type summary struct {
+		StartCap     float64
+		EndCap       float64
+		Distribution float64
+	}
+	for _, f := range fd {
+		fmt.Printf(f.FundName)
+		s := summary{}
+		for _, d := range f.Cache {
+			if d.Year == 2016 {
+				// do summary
+				if d.Month == 1 {
+					s.StartCap = d.TotalCashflowInitial
+				}
+				s.EndCap = d.TotalCashflowInitial
+				s.Distribution += d.TotalDistribution
+			}
+		}
+		capRet := (s.EndCap + s.Distribution) / s.StartCap
+		capRetPct := (capRet - 1.0) * 100.0
+		fmt.Printf("\t%.2f%%\n", capRetPct)
+	}
 }
 
 func GetFundList(fundSeries string) error {
@@ -103,6 +90,20 @@ func GetFundList(fundSeries string) error {
 	// cache the results
 	for _, f := range fundList.Data {
 		FundCache[f.FundCode] = f
+
+		// load distribution cache if available
+		if cache, err := os.Open(fmt.Sprintf("./data/cache/%s.json", f.Hash())); err == nil {
+			resBody, err := ioutil.ReadAll(cache)
+			if err != nil {
+				continue
+			}
+			var wrapper *DistributionWrapper
+			if err := json.Unmarshal(resBody, &wrapper); err != nil {
+				continue
+			}
+			f.Cache = wrapper.Items
+		}
+
 	}
 
 	return nil

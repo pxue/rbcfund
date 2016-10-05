@@ -55,6 +55,8 @@ type RBC struct {
 var (
 	ApiURL      = "https://services.rbcgam.com/portfolio-tools/public/investment-performance"
 	ContentType = "application/x-www-form-urlencoded; charset=UTF-8"
+	// Cached fundlist
+	FundCache = Funds{}
 
 	app *RBC
 )
