@@ -44,6 +44,7 @@ func main() {
 			fmt.Errorf("Unknown fund code %s", *fundCode)
 			return
 		}
+		fmt.Println(f.FundName)
 		f.PrintData()
 	case portfolio.FullCommand():
 		portfolio, err := rbc.NewPortfolio(*portfolioFunds)
