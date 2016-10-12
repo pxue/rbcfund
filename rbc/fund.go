@@ -2,6 +2,7 @@ package rbc
 
 import (
 	"crypto/md5"
+	"errors"
 	"fmt"
 )
 
@@ -30,6 +31,24 @@ func (f *Fund) Hash() string {
 	h := md5.New()
 	h.Write([]byte(f.FundCode))
 	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+func GetFund(fcode string) (*Fund, error) {
+	fund, ok := FundCache[fcode]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("unknown fund code %s", fcode))
+	}
+
+	// cache miss. load from rbc
+	if fund.Cache == nil {
+		p := NewPortfolio([]string{fcode})
+		if err := p.GetDistribution(); err != nil {
+			return nil, err
+		}
+		fund.Cache = p.Distributions
+	}
+
+	return fund, nil
 }
 
 func (f *Fund) PrintData() {

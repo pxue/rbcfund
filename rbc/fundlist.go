@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -50,9 +51,10 @@ func GetFundList(fundSeries string) error {
 		doWrite bool
 	)
 
-	if f, err := os.Open("./data/fundList.json"); err == nil {
-		reader = f
-	} else {
+	cached, err := os.Open("./data/fundList.json")
+	if err != nil {
+		log.Print(err)
+
 		payload := url.Values{}
 		payload.Set("fundGroup", "RBC Funds")
 		payload.Set("fundSeries", fundSeries)
@@ -63,6 +65,11 @@ func GetFundList(fundSeries string) error {
 		defer res.Body.Close()
 		reader = res.Body
 		doWrite = true
+	}
+
+	if reader == nil {
+		// read from cache
+		reader = cached
 	}
 
 	rawFundList, err := ioutil.ReadAll(reader)
@@ -92,18 +99,20 @@ func GetFundList(fundSeries string) error {
 		FundCache[f.FundCode] = f
 
 		// load distribution cache if available
-		if cache, err := os.Open(fmt.Sprintf("./data/cache/%s.json", f.Hash())); err == nil {
-			resBody, err := ioutil.ReadAll(cache)
-			if err != nil {
-				continue
-			}
-			var wrapper *DistributionWrapper
-			if err := json.Unmarshal(resBody, &wrapper); err != nil {
-				continue
-			}
-			f.Cache = wrapper.Items
+		cache, err := os.Open(fmt.Sprintf("./data/cache/%s.json", f.Hash()))
+		if err != nil {
+			continue
 		}
 
+		resBody, err := ioutil.ReadAll(cache)
+		if err != nil {
+			continue
+		}
+		var wrapper *DistributionWrapper
+		if err := json.Unmarshal(resBody, &wrapper); err != nil {
+			continue
+		}
+		f.Cache = wrapper.Items
 	}
 
 	return nil

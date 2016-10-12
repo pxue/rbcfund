@@ -13,7 +13,7 @@ type Portfolio struct {
 	nameHash string
 }
 
-func NewPortfolio(fundNames []string) (*Portfolio, error) {
+func NewPortfolio(fundNames []string) *Portfolio {
 	portfolio := &Portfolio{}
 	portfolio.Funds = make([]*Fund, len(fundNames))
 	h := md5.New()
@@ -28,7 +28,7 @@ func NewPortfolio(fundNames []string) (*Portfolio, error) {
 
 	// get distribution
 	portfolio.GetDistribution()
-	return portfolio, nil
+	return portfolio
 }
 
 // GetDistribution pulls the portfolio distribution data from cached data or RBC
