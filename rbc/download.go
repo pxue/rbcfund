@@ -25,6 +25,7 @@ func DownloadPDF(series string) error {
 			// skip USD funds
 			continue
 		}
+		catLookup[fund.AssetClass] = append(catLookup[fund.AssetClass], fund)
 
 		fileName := fmt.Sprintf("data/portfolios/%s.pdf", fund.FundCode)
 		if _, err := os.Stat(fileName); !os.IsNotExist(err) {
@@ -52,8 +53,6 @@ func DownloadPDF(series string) error {
 		resp.Body.Close()
 		output.Close()
 		log.Printf("downloaded %s", fund.FundName)
-
-		catLookup[fund.AssetClass] = append(catLookup[fund.AssetClass], fund)
 	}
 
 	for cls, funds := range catLookup {
